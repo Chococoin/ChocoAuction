@@ -79,14 +79,14 @@ contract ChocoAuction{
     function myPendingFunds() public view returns (uint){
         return pendingReturns[msg.sender];
     }
-    
+
     function closeIt() internal returns (bool) {
         if (biddingTime < block.timestamp) {
             open = false;
             return open;
-        } 
+        }
     }
-    
+
     function isClosed () public view returns(bool) {
         return !open;
     }
