@@ -1,20 +1,17 @@
-pragma solidity ^0.5.9;
+pragma solidity ^0.5.8;
 
 contract ChocoAuction{
-    address payable public first_beneficiary;
-    address payable public second_beneficiary;
+    address payable public beneficiary;
     address public highestBidder;
     uint public highestBid;
-    uint public auctionStart;
     uint public biddingTime;
     uint public sixmonth;
-    bool public ended = false;
-    uint secondstage = 1000;
+    bool open = true;
 
     mapping(address => uint) pendingReturns;
 
-    modifier isEnded(){
-        require(biddingTime >= now && ended == false,
+    modifier isOpen(){
+        require(open == true,
         "Is too late to make a bid. The auction has ended."
         );
         _;
@@ -22,7 +19,7 @@ contract ChocoAuction{
 
     modifier isHigh(){
         require(msg.value + pendingReturns[msg.sender] > highestBid,
-        "The amount is not enough to overcome the bid."
+        "The amount is not enough to overcome the previous bid."
         );
         _;
     }
@@ -31,40 +28,81 @@ contract ChocoAuction{
     event AuctionEnded(address winner, uint amount);
 
     constructor() public payable {
-        // El primer beneficiario es el cacao cultor.
-        // Mientras la subasta no supera el precio indicado para la segunda
-        // fase el dinero llegará solo a él unicamente por el cacao sin costos de envio.
-
-        first_beneficiary = 0xB3DbFAe156c57eb3eD094e29DaFE981dd84c1AF6;
-
-        // El segundo Beneficiario es la fundacion Bit&Nibs (Creadores del contrato)
-        // Si el monto de la subasta supera o iguala el monto de la segunda face
-        // El cacao sera enviado a Italia para la creacion del primer Batch del ChocoCrypto
-        // El dinero se utilizara para realizar el envio del cacao producir las barras
-        // chococrypto y gastos de promocion
-        second_beneficiary = msg.sender;
-        // Marca el inicio de la subasta al momento de la creacion del contrato.
-        auctionStart = block.timestamp;
+        // El beneficiario es el cacao cultor.
+        beneficiary = msg.sender;
         // Cantidad de segundo que durara la subasta (Seis meses)
-        sixmonth = now + 600;
+        sixmonth = 500;
         // Señala la fecha de culminacion de la subasta.
         biddingTime = now + sixmonth;
     }
 
-    function bid() public payable isEnded isHigh {
+    function bid() public payable isOpen isHigh returns(bool){
+        closeIt();
+        require(msg.sender != highestBidder,
+        "HighestBidder cannot make rebidding."
+        );
+        require(pendingReturns[msg.sender] == 0,
+        "You have a pending found, make rebidding");
         pendingReturns[highestBidder] = highestBid;
         highestBid = msg.value;
         highestBidder = msg.sender;
+        return true;
     }
 
-    function auctionEnd() public {
+    function rebidding() public payable isOpen isHigh returns(bool){
+        closeIt();
+        require(msg.sender != highestBidder,
+        "HighestBidder cannot make rebidding."
+        );
+        require(pendingReturns[msg.sender] > 0,
+        "This function only work if you have a overcame bid."
+        );
+        pendingReturns[highestBidder] = highestBid;
+        highestBid = msg.value + pendingReturns[msg.sender];
+        pendingReturns[msg.sender] = 0;
+        highestBidder = msg.sender;
+        return true;
+    }
+
+    function auctionEnd() public returns(bool){
+        require(msg.sender == beneficiary,
+        "Only beneficiary can call this function."
+        );
+        require(block.timestamp > biddingTime,
+        "Auction isn't ended yet."
+        );
         emit AuctionEnded(highestBidder, highestBid);
-        if(highestBid < secondstage) {
-            first_beneficiary.transfer(highestBid);
-        } else {
-            first_beneficiary.transfer(secondface - 1);
-            second_beneficiary.transfer(highestBid-(secondstage - 1));
+        beneficiary.transfer(highestBid);
+        closeIt();
+    }
+
+    function myPendingFunds() public view returns (uint){
+        return pendingReturns[msg.sender];
+    }
+    
+    function closeIt() internal returns (bool) {
+        if (biddingTime < block.timestamp) {
+            open = false;
+            return open;
+        } 
+    }
+    
+    function isClosed () public view returns(bool) {
+        return !open;
+    }
+
+    function withdrawPendings() public returns(bool){
+        require(pendingReturns[msg.sender] > 0,
+        "You don't have any funds on this contract."
+        );
+        uint amount = pendingReturns[msg.sender];
+        if (amount > 0) {
+            pendingReturns[msg.sender] = 0;
+            if (!msg.sender.send(amount)) {
+                pendingReturns[msg.sender] = amount;
+                return false;
+            }
         }
-        ended = true;
+        return true;
     }
 }
