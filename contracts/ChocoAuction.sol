@@ -31,7 +31,7 @@ contract ChocoAuction{
         // El beneficiario es el cacao cultor.
         beneficiary = msg.sender;
         // Cantidad de segundo que durara la subasta (Seis meses)
-        sixmonth = 500;
+        sixmonth = 600;
         // Señala la fecha de culminacion de la subasta.
         biddingTime = now + sixmonth;
     }
