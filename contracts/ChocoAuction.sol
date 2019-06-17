@@ -88,7 +88,7 @@ contract ChocoAuction{
         return !open;
     }
 
-    function withdrawPendings() public returns(bool){
+    function withdrawPendings() public returns(uint){
         require(pendingReturns[msg.sender] > 0,
         "You don't have any funds on this contract"
         );
@@ -97,9 +97,9 @@ contract ChocoAuction{
             pendingReturns[msg.sender] = 0;
             if (!msg.sender.send(amount)) {
                 pendingReturns[msg.sender] = amount;
-                return false;
+                return 0;
             }
         }
-        return true;
+        return amount;
     }
 }

@@ -1,4 +1,4 @@
-advanceTime = (time) => {
+  advanceTime = (time) => {
     return new Promise((resolve, reject) => {
       web3.currentProvider.send({
         jsonrpc: '2.0',
@@ -27,6 +27,15 @@ advanceTime = (time) => {
     })
   }
   
+  
+  getCurrentTime = () => {
+    return new Promise(function(resolve) {
+      web3.eth.getBlock("latest").then(function(block) {
+            resolve(block.timestamp)
+        });
+    })
+  }
+
   takeSnapshot = () => {
     return new Promise((resolve, reject) => {
       web3.currentProvider.send({
@@ -65,5 +74,6 @@ advanceTime = (time) => {
     advanceBlock,
     advanceTimeAndBlock,
     takeSnapshot,
-    revertToSnapShot
+    revertToSnapShot,
+    getCurrentTime
   }
