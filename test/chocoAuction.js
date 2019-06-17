@@ -7,8 +7,7 @@ const Fri_Nov_01_00_00_UTC_2019 = 1572566400;
 
 contract('ChocoAuction', (accounts) => {
   var chocoAuction, highestBid, highestBidder, auctionEnd,
-      pendingReturns, bid, rebid, myPendingFunds, isClosed,
-      balance, snapShot;
+      bid, rebid, myPendingFunds, isClosed, balance, snapShot;
   it('Deploy the Smart Contract', async () => {
       chocoAuction = await ChocoAuction.deployed();
       assert(chocoAuction.address !== '');
@@ -44,8 +43,8 @@ contract('ChocoAuction', (accounts) => {
       assert(highestBidder === accounts[2]);
   });
   it('Set properly Pending returns', async () => {
-      pendingReturns = await chocoAuction.myPendingFunds.call({ from: accounts[1] });
-      assert(pendingReturns.toNumber() === 100000000000);
+      myPendingFunds = await chocoAuction.myPendingFunds.call({ from: accounts[1] });
+      assert(myPendingFunds.toNumber() === 100000000000);
   });
   it('Overcame bidder unable to make a bid', async () => {
     try {
@@ -127,27 +126,72 @@ contract('ChocoAuction', (accounts) => {
   });
   it('Overcame bidder withdraw funds', async () => {
       bid = await chocoAuction.bid({ from: accounts[3], value: 500000000000 });
-      withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[2] });
-      assert(withdrawPendings.receipt.status);
+      withdrawPendings = await chocoAuction.withdrawPendings.call({ from: accounts[2] });
+      assert(withdrawPendings.toNumber() === 400000000000);
   });
   it('New balance of exit bidder', async () => {
+      withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[2] });
       balance = await chocoAuction.myPendingFunds({ from: accounts[2] });
       assert(balance.toNumber() === 0);
   });
   it('Set moment before end of auction', async () => {
-    snapShot =  await Utils.takeSnapshot();
-    console.log(snapShot)
-    assert(snapShot);
+      snapShot = await Utils.takeSnapshot();
+      assert(snapShot);
   }); 
    it('After End of Auction', async () => {
-    await Utils.advanceTimeAndBlock(Fri_Nov_01_00_00_UTC_2019 - now);
-    let time = await Utils.getCurrentTime();
-    console.log(time); 
-    assert(time);
+      await Utils.advanceTimeAndBlock(Fri_Nov_01_00_00_UTC_2019 - now);
+      let time = await Utils.getCurrentTime();
+      assert(time > Fri_Nov_01_00_00_UTC_2019);
+  });
+  it('Last bid to close the auction', async () => {
+      bid = await chocoAuction.bid({ from: accounts[4], value: 5000000000000000000 });
+      assert(bid.receipt.status);
+  });
+  it('No more bids are allowed', async () => {
+    try {
+      bid = await chocoAuction.bid({ from: accounts[5], value: 6000000000000000000});
+    } catch(e) {
+      assert(e.message === Errors[6]);
+    }
+  });
+  it('Last highest bidder info remain', async () => {
+      highestBidder = await chocoAuction.highestBidder({ from: accounts[5]});
+      assert(highestBidder === accounts[4]);
+  });
+  it('Auction is closed', async () => {
+      isClosed = await chocoAuction.isClosed({ from: accounts[5]});
+      assert(isClosed);
+  });
+  it('Highest bidder has not pending funds', async () => {
+      myPendingFunds = await chocoAuction.myPendingFunds({ from: accounts[4] });
+      assert(myPendingFunds.toNumber() === 0);
+  });
+  it('Highest bidder cannot make withdraw', async () => {
+    try {
+      withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[4] });
+    } catch(e) {
+      assert(e.message === Errors[7]);
+    }
+  });
+  it('No winner bidder make a withdraw 1/2', async () => {
+      withdrawPendings = await chocoAuction.withdrawPendings({ form: accounts[1] });
+      console.log(withdrawPendings);
+      assert(withdrawPendings);
+  });
+  it('Benificiary take higgest bid 1/2', async () => {
+      auctionEnd = await chocoAuction.auctionEnd.call({ from: accounts[0]});
+      assert(auctionEnd.receipt.status);
+  });
+  it('Benificiary take higgest bid 2/2', async () => {
+    auctionEnd = await chocoAuction.auctionEnd({ from: accounts[0]});
+    assert(auctionEnd.receipt.status);
+  });
+  it('No winner bidder make a without 2/2', async () => {
+    withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[3]});
+    assert(auctionEnd.receipt.status);
   });
   it('Revert to snapshot', async () => {
     await Utils.revertToSnapShot(snapShot.result);
     let time = await Utils.getCurrentTime();
-    console.log(time); 
-  })
+  });
 });
