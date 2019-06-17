@@ -1,25 +1,25 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.8;
 
 contract ChocoAuction{
     address payable public beneficiary;
     address public highestBidder;
     uint public highestBid;
-    uint public biddingTime;
-    uint public sixmonth;
+    uint Fri_Nov_01_00_00_UTC_2019 = 1572566400;
+    uint endAuctionDay;
     bool open = true;
 
     mapping(address => uint) pendingReturns;
 
     modifier isOpen(){
         require(open == true,
-        "Is too late to make a bid. The auction has ended."
+        "Is too late to make a bid. The auction has ended"
         );
         _;
     }
 
     modifier isHigh(){
         require(msg.value + pendingReturns[msg.sender] > highestBid,
-        "The amount is not enough to overcome the previous bid."
+        "The amount is not enough to overcome the previous bid"
         );
         _;
     }
@@ -28,18 +28,15 @@ contract ChocoAuction{
     event AuctionEnded(address winner, uint amount);
 
     constructor() public payable {
-        // El beneficiario es el cacao cultor.
         beneficiary = msg.sender;
-        // Cantidad de segundo que durara la subasta (Seis meses)
-        sixmonth = 600;
         // Señala la fecha de culminacion de la subasta.
-        biddingTime = now + sixmonth;
+        endAuctionDay = Fri_Nov_01_00_00_UTC_2019;
     }
 
     function bid() public payable isOpen isHigh returns(bool){
         closeIt();
         require(msg.sender != highestBidder,
-        "HighestBidder cannot make rebidding."
+        "HighestBidder cannot make rebidding"
         );
         require(pendingReturns[msg.sender] == 0,
         "You have a pending found, make rebidding");
@@ -49,13 +46,13 @@ contract ChocoAuction{
         return true;
     }
 
-    function rebidding() public payable isOpen isHigh returns(bool){
+    function rebid() public payable isOpen isHigh returns(bool){
         closeIt();
         require(msg.sender != highestBidder,
-        "HighestBidder cannot make rebidding."
+        "HighestBidder cannot make rebidding"
         );
         require(pendingReturns[msg.sender] > 0,
-        "This function only work if you have a overcame bid."
+        "This function only work if you have a overcame bid"
         );
         pendingReturns[highestBidder] = highestBid;
         highestBid = msg.value + pendingReturns[msg.sender];
@@ -66,10 +63,10 @@ contract ChocoAuction{
 
     function auctionEnd() public returns(bool){
         require(msg.sender == beneficiary,
-        "Only beneficiary can call this function."
+        "Only beneficiary can call this function"
         );
-        require(block.timestamp > biddingTime,
-        "Auction isn't ended yet."
+        require(block.timestamp > endAuctionDay,
+        "Auction isn't ended yet"
         );
         emit AuctionEnded(highestBidder, highestBid);
         beneficiary.transfer(highestBid);
@@ -81,7 +78,7 @@ contract ChocoAuction{
     }
 
     function closeIt() internal returns (bool) {
-        if (biddingTime < block.timestamp) {
+        if (endAuctionDay < block.timestamp) {
             open = false;
             return open;
         }
@@ -93,7 +90,7 @@ contract ChocoAuction{
 
     function withdrawPendings() public returns(bool){
         require(pendingReturns[msg.sender] > 0,
-        "You don't have any funds on this contract."
+        "You don't have any funds on this contract"
         );
         uint amount = pendingReturns[msg.sender];
         if (amount > 0) {
