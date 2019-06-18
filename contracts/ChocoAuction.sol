@@ -71,6 +71,7 @@ contract ChocoAuction{
         emit AuctionEnded(highestBidder, highestBid);
         beneficiary.transfer(highestBid);
         closeIt();
+        return true;
     }
 
     function myPendingFunds() public view returns (uint){
