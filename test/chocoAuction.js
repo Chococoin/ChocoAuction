@@ -174,24 +174,23 @@ contract('ChocoAuction', (accounts) => {
     }
   });
   it('No winner bidder make a withdraw 1/2', async () => {
-      withdrawPendings = await chocoAuction.withdrawPendings({ form: accounts[1] });
-      console.log(withdrawPendings);
-      assert(withdrawPendings);
+      withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[1] });
+      assert(withdrawPendings.receipt.status);
   });
   it('Benificiary take higgest bid 1/2', async () => {
-      auctionEnd = await chocoAuction.auctionEnd.call({ from: accounts[0]});
-      assert(auctionEnd.receipt.status);
+      auctionEnd = await chocoAuction.auctionEnd.call({ from: accounts[0] });
+      assert(auctionEnd);
   });
   it('Benificiary take higgest bid 2/2', async () => {
-    auctionEnd = await chocoAuction.auctionEnd({ from: accounts[0]});
-    assert(auctionEnd.receipt.status);
+      auctionEnd = await chocoAuction.auctionEnd({ from: accounts[0] });
+      assert(auctionEnd.receipt.status);
   });
-  it('No winner bidder make a without 2/2', async () => {
-    withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[3]});
-    assert(auctionEnd.receipt.status);
+  it('No winner bidder make a withdraw 2/2', async () => {
+      withdrawPendings = await chocoAuction.withdrawPendings({ from: accounts[3] });
+      assert(auctionEnd.receipt.status);
   });
   it('Revert to snapshot', async () => {
-    await Utils.revertToSnapShot(snapShot.result);
-    let time = await Utils.getCurrentTime();
+      await Utils.revertToSnapShot(snapShot.result);
+      let time = await Utils.getCurrentTime();
   });
 });
