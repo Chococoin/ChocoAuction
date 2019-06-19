@@ -43,6 +43,7 @@ contract ChocoAuction{
         pendingReturns[highestBidder] = highestBid;
         highestBid = msg.value;
         highestBidder = msg.sender;
+        emit HighestBidIncreased(highestBidder, highestBid);
         return true;
     }
 
@@ -58,6 +59,7 @@ contract ChocoAuction{
         highestBid = msg.value + pendingReturns[msg.sender];
         pendingReturns[msg.sender] = 0;
         highestBidder = msg.sender;
+        emit HighestBidIncreased(highestBidder, highestBid);
         return true;
     }
 
